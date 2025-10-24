@@ -32,3 +32,4 @@ Welcome to **MoodDeck UltraVerse** — a mood card generator powered by Appwrite
    git clone https://github.com/YOUR_USERNAME/mooddeck-ultraverse.git
    cd mooddeck-ultraverse
    who ate the cheese btw
+[![GitHub Pages](https://img.shields.io/badge/Live-MoodDeck%20UltraVerse-red?logo=github)](https://wario41.github.io/mooddeck-ultraverse-/)
