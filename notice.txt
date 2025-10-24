@@ -1,0 +1,1 @@
+If you encounter any bugs or unexpected behaviour, feel free to open an issue I'll take a look as soon as possible 
