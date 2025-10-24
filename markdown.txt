@@ -1,0 +1,3 @@
+## 🐛 Found a Bug?
+
+If MoodDeck glitches out or chaos mode goes too far, [open an issue](https://github.com/wario41/mooddeck-ultraverse/issues) and I’ll zap it ASAP ⚡
