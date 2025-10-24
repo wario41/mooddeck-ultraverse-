@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MoodDeck UltraVerse</title>
+  <script src="https://cdn.jsdelivr.net/npm/appwrite@latest"></script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f0f0;
+      padding: 20px;
+      text-align: center;
+    }
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px auto;
+      width: 300px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .card h2 { margin: 0; }
+    .card p { font-style: italic; }
+    input, textarea, select, button {
+      margin: 10px;
+      padding: 10px;
+      width: 80%;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #ff6f61;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>MoodDeck UltraVerse 🎴</h1>
+
+  <div id="authArea">
+    <input type="text" id="username" placeholder="Username" />
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="register()">Register</button>
+    <button onclick="login()">Login</button>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <div id="welcomeMsg" style="display:none;"></div>
+
+  <div>
+    <select id="emoji">
+      <option value="😄">😄 Happy</option>
+      <option value="😢">😢 Sad</option>
+      <option value="🤯">🤯 Overwhelmed</option>
+      <option value="🧪">🧪 Wario41</option>
+      <option value="😎">😎 Cool</option>
+      <option value="😴">😴 Sleepy</option>
+      <option value="😡">😡 Angry</option>
+      <option value="🤩">🤩 Excited</option>
+      <option value="😬">😬 Awkward</option>
+    </select><br />
+    <input type="text" id="title" placeholder="Card Title" /><br />
+    <textarea id="desc" placeholder="Describe your mood..."></textarea><br />
+    <input type="text" id="quote" placeholder="Optional quote" /><br />
+    <input type="color" id="bgColor" value="#ffffff" /><br />
+    <button onclick="generateCard()">Create Mood Card</button>
+    <button onclick="chaosCard()">🧪 Wario41 Chaos</button>
+    <button onclick="exportCard()">📤 Export Last Card</button>
+  </div>
+
+  <div id="deck"></div>
+
+  <script>
+    const client = new Appwrite.Client()
+      .setEndpoint('https://fra.cloud.appwrite.io/v1')
+      .setProject('68fbfcd0001ea6dad0aa');
+
+    const account = new Appwrite.Account(client);
+    const databases = new Appwrite.Databases(client);
+    const databaseId = 'the-data-base-id';
+    const usersTable = '68fbf97f000f0e36e4d5';
+    const cardsTable = 'cards';
+
+    let currentUser = null;
+
+    function register() {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const username = document.getElementById("username").value.trim();
+      if (!email || !password || !username) return alert("All fields required.");
+
+      account.create('unique()', email, password, username)
+        .then(() => account.get())
+        .then(user => {
+          currentUser = user;
+          const userData = {
+            userId: user.$id,
+            username: user.name,
+            email: user.email,
+            joined: new Date().toISOString()
+          };
+          return databases.createDocument(databaseId, usersTable, 'unique()', userData);
+        })
+        .then(() => alert("Registered and saved to database!"))
+        .catch(err => alert(err.message));
+    }
+
+    function login() {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      account.createEmailSession(email, password)
+        .then(() => account.get())
+        .then(user => {
+          currentUser = user;
+          document.getElementById("authArea").style.display = "none";
+          document.getElementById("welcomeMsg").innerHTML = `Welcome, <strong>${user.name}</strong> 👋`;
+          document.getElementById("welcomeMsg").style.display = "block";
+        })
+        .catch(err => alert(err.message));
+    }
+
+    function logout() {
+      account.deleteSession('current')
+        .then(() => {
+          currentUser = null;
+          alert("Logged out!");
+          location.reload();
+        });
+    }
+
+    function generateCard() {
+      if (!currentUser) return alert("Please log in first.");
+      const emoji = document.getElementById("emoji").value;
+      const title = document.getElementById("title").value.trim();
+      const desc = document.getElementById("desc").value.trim();
+      const quote = document.getElementById("quote").value.trim();
+      const bgColor = document.getElementById("bgColor").value;
+      const timestamp = new Date().toISOString();
+
+      const cardData = {
+        emoji, title, desc, quote, bgColor, timestamp,
+        userId: currentUser.$id
+      };
+
+      databases.createDocument(databaseId, cardsTable, 'unique()', cardData)
+        .then(() => {
+          renderCard(cardData);
+          clearInputs();
+        })
+        .catch(err => alert(err.message));
+    }
+
+    function chaosCard() {
+      if (!currentUser) return alert("Please log in first.");
+      const emojis = ["😄", "😢", "🤯", "🧪", "😎", "😴", "😡", "🤩", "😬"];
+      const titles = ["Chaos Mode", "Wario41 Surge", "UltraVerse Glitch", "Moodquake", "Emoji Storm"];
+      const descs = ["Unpredictable vibes", "Reality bending", "Mood overload", "Feeling everything", "No filter"];
+      const quotes = ["Let the chaos begin", "Wario41 was here", "MoodDeck unleashed"];
+      const bgColor = "#" + Math.floor(Math.random() * 16777215).toString(16);
+      const timestamp = new Date().toISOString();
+
+      const cardData = {
+        emoji: emojis[Math.floor(Math.random() * emojis.length)],
+        title: titles[Math.floor(Math.random() * titles.length)],
+        desc: descs[Math.floor(Math.random() * descs.length)],
+        quote: quotes[Math.floor(Math.random() * quotes.length)],
+        bgColor,
+        timestamp,
+        userId: currentUser.$id
+      };
+
+      databases.createDocument(databaseId, cardsTable, 'unique()', cardData)
+        .then(() => renderCard(cardData))
+        .catch(err => alert(err.message));
+    }
+
+    function renderCard(data) {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.style.backgroundColor = data.bgColor;
+      card.innerHTML = `<h2>${data.emoji} ${data.title}</h2><p>${data.desc}</p>${data.quote ? `<blockquote>"${data.quote}"</blockquote>` : ""}`;
+      document.getElementById("deck").appendChild(card);
+    }
+
+    function clearInputs() {
+      document.getElementById("title").value = "";
+      document.getElementById("desc").value = "";
+      document.getElementById("quote").value = "";
+    }
+
+    function exportCard() {
+      const cards = document.querySelectorAll(".card");
+      const lastCard = cards[cards.length - 1];
+      html2canvas(lastCard).then(canvas => {
+        const link = document.createElement("a");
+        link.download = "mood-card.png";
+        link.href = canvas.toDataURL();
+        link.click();
+      });
+    }
+  </script>
+</body>
+</html>
